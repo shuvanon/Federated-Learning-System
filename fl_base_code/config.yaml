@@ -1,0 +1,63 @@
+# Top-level selections
+use_split_strategy: 'random'  # Choose between 'random', 'quantity_skew', 'feature_based'
+use_manipulation_technique: 'none' #'color_transform'  # Choose from available techniques
+use_preprocessing_technique: 'none'  # Choose from available techniques
+
+# Data settings
+data:
+  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\sehoaoi_labeled_original_high.csv'
+  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\data\sehoaoi_labeled\exactInspImage\high'
+  preprocessed_data_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\fl_base_code\preprocessed_data'
+  save_split: True  # If True, save split data to disk; if False, keep in RAM
+  clean_data_before_run: True  # If True, clean the client and benchmark folders before running
+  batch_size: 32
+  train_split: 0.8
+  label_column_index: 1  # Index of the label column
+
+# Benchmark settings
+benchmark:
+  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\fl_base_code\benchmark_data\images\labels.csv'
+  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\fl_base_code\benchmark_data\images'
+  benchmark_percentage: 0.1
+  save_benchmark: True # If True, save benchmark data to a file, else keep in memory
+
+num_clients: 10
+
+# Splitting strategies
+splitting:
+  strategies:
+    random:
+      num_clients: 2
+    quantity_skew:
+      alpha: 0.5
+    feature_based:
+      feature_column: 'label'
+
+# Manipulation techniques
+manipulation:
+  techniques:
+    color_transform:
+      type: 'enhanced_contrast'
+      factor: 1.5
+    histogram_equalization: {}
+    white_balance: {}
+
+# Preprocessing techniques
+preprocessing:
+  techniques:
+    fixed_flip: {}
+    rotation:
+      degrees: 45
+
+
+training:
+  epochs: 100
+  learning_rate: 0.001
+
+# Server and Client specific configurations
+network:
+  server:
+    address: "0.0.0.0:8080"  # Server listens on all interfaces
+    num_rounds: 15
+  client:
+    address: "127.0.0.1:8080"  # Client connects to localhost
