@@ -185,6 +185,6 @@ fabric.properties
 # .idea
 
 # Project specific data
-.csv
-.png
-.xlsx
+*.csv
+*.png
+*.xlsx
