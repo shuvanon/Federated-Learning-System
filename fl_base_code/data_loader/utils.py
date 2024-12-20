@@ -1,7 +1,8 @@
 import os
 import shutil
+from typing import Dict
+
 import pandas as pd
-from typing import Dict, Optional
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -21,7 +22,7 @@ def copy_images_to_client_folders(client_data, img_dir, destination_dir):
         os.makedirs(client_folder, exist_ok=True)
 
         for _, row in data.iterrows():
-            img_name = str(row[0])+".png"
+            img_name = str(row[0]) + ".png"
             img_source_path = os.path.join(img_dir, img_name)
             img_dest_path = os.path.join(client_folder, img_name)
 
@@ -29,6 +30,7 @@ def copy_images_to_client_folders(client_data, img_dir, destination_dir):
                 shutil.copy(img_source_path, img_dest_path)
             else:
                 print(f"Image {img_source_path} not found!")
+
 
 def transfer_to_benchmark(client_data: Dict[int, pd.DataFrame], benchmark_percentage: float, preprocessed_data_dir: str,
                           img_dir: str, csv_file: str, save_benchmark: bool) -> pd.DataFrame:
@@ -62,7 +64,7 @@ def transfer_to_benchmark(client_data: Dict[int, pd.DataFrame], benchmark_percen
 
         # Correct the image name column reference here (assume the column is 'filename')
         for _, row in benchmark_data.iterrows():
-            img_name = str(row.iloc[0])+".png"
+            img_name = str(row.iloc[0]) + ".png"
             # print(f"Processing image: {img_name}")
 
             img_source_path = os.path.join(f'{preprocessed_data_dir}/client_{client_id}', img_name)
@@ -107,7 +109,6 @@ def clean_folders(client_dir: str, benchmark_dir: str) -> None:
         shutil.rmtree(benchmark_dir)
         print(f"Cleaned {benchmark_dir}")
     os.makedirs(benchmark_dir, exist_ok=True)
-
 
 
 class PreprocessedDataset(Dataset):

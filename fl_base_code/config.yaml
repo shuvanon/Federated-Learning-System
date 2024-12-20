@@ -1,18 +1,25 @@
 # Top-level selections
+experiment_name: "contrast_set_5"
 use_split_strategy: 'random'  # Choose between 'random', 'quantity_skew', 'feature_based'
-use_manipulation_technique: 'none' #'color_transform'  # Choose from available techniques
+use_manipulation_technique: 'contrast' # 'contrast', 'brightness', 'gaussian_noise'  # Choose from available techniques
 use_preprocessing_technique: 'none'  # Choose from available techniques
 
 # Data settings
+#sehoaoi data
+#  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data\sehoaoi_labeled_original_high.csv'
+#  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data'
+#siemens
+#  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\siemens_amberg_data\siemens_labeled_original_high.csv'
+#  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\siemens_amberg_data'
 data:
-  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\sehoaoi_labeled_original_high.csv'
-  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\data\sehoaoi_labeled\exactInspImage\high'
+  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data\sehoaoi_labeled_original_high.csv'
+  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data'
   preprocessed_data_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\fl_base_code\preprocessed_data'
   save_split: True  # If True, save split data to disk; if False, keep in RAM
   clean_data_before_run: True  # If True, clean the client and benchmark folders before running
-  batch_size: 32
+  batch_size: 16
   train_split: 0.8
-  label_column_index: 1  # Index of the label column
+  label_column_index: 6  # Index of the label column
 
 # Benchmark settings
 benchmark:
@@ -21,7 +28,7 @@ benchmark:
   benchmark_percentage: 0.1
   save_benchmark: True # If True, save benchmark data to a file, else keep in memory
 
-num_clients: 10
+num_clients: 5
 
 # Splitting strategies
 splitting:
@@ -35,29 +42,70 @@ splitting:
 
 # Manipulation techniques
 manipulation:
-  techniques:
-    color_transform:
-      type: 'enhanced_contrast'
-      factor: 1.5
-    histogram_equalization: {}
-    white_balance: {}
+  manipulation_mode: random # "fixed" or "random"
+  contrast:
+    alpha: 1 # Decrease α < 1, Increase α > 1
+    alpha_min: 0
+    alpha_max: 3
+  brightness:
+    intensity: 10 #intensity value <0 is darken, >1 brighten
+    intensity_min: -255
+    intensity_max: 255
+  white_balance:
+    color_temperature: 5000 # << is worm, >> is cool
+    color_temperature_min: 1000
+    color_temperature_max: 20000
+  gaussian_noise:
+    sigma: 10 # σ = 0: No noise, σ > 0:Increasing noise
+    sigma_min: 0
+    sigma_max: 50
+  edge_filter:
+    threshold: 50
+    lower_threshold: 50  # Fixed threshold for edge detection
+    upper_threshold: 100
+  sharpening_blurring:
+    lambda_value: 1.5  # λ>0: The image is sharpened, λ<0: The image is blurred
+    lambda_min: -1
+    lambda_max: 1
 
 # Preprocessing techniques
 preprocessing:
   techniques:
-    fixed_flip: {}
+    fixed_flip: { }
     rotation:
-      degrees: 45
+      degrees: 90
+# Model
+model:
+  type: "custom_cnn"  # Options: "custom_cnn" or "transformer" [make 64*64 or 224*224 in (server.py ->load_benchmark_data), (client/utils.py ->load_data,PreprocessedDataset)]
+  parameters:
+    custom_cnn:
+      input_dim: [ 3, 64, 64 ]  # Input dimensions, Match the image size
+      conv:
+        - { out_channels: 32, kernel_size: 3, stride: 1, padding: 1 }
+        - { out_channels: 64, kernel_size: 3, stride: 1, padding: 1 }
+        - { out_channels: 128, kernel_size: 3, stride: 1, padding: 1 }
+      cnn_activation: [ "relu", "relu", "relu" ]  # Activation function for each convolutional layer
+      pooling:
+        - { type: "max", kernel_size: 2, stride: 2 }
+        - { type: "max", kernel_size: 2, stride: 2 }
+        - { type: "max", kernel_size: 2, stride: 2 }
+      layer_neurons: [ 256, 128, 64 ]  # Neurons in fully connected layers
+      activations: [ "relu", "relu", "relu" ]  # Activation functions for fully connected layers
+      dropout: [ 0.5, 0.5, 0.5 ]  # Dropout for fully connected layers
 
+    transformer:
+      pretrained_model: vit_b_16 # ["vit_b_16", "vit_l_16", "swin_b", "swin_l"]
+      use_pre_trained_weights: true  # Use pre-trained weights for Vision Transformer
+      output_dim: 2  # Number of output classes
 
 training:
   epochs: 100
-  learning_rate: 0.001
+  learning_rate: 0.0001
 
 # Server and Client specific configurations
 network:
   server:
     address: "0.0.0.0:8080"  # Server listens on all interfaces
-    num_rounds: 15
+    num_rounds: 10
   client:
     address: "127.0.0.1:8080"  # Client connects to localhost

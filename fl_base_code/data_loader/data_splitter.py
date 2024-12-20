@@ -1,8 +1,10 @@
 import os
-import pandas as pd
+from typing import Dict
+
 import numpy as np
+import pandas as pd
 from numpy.random import dirichlet
-from typing import Dict, Any
+
 
 class DataSplitter:
     """
@@ -15,7 +17,7 @@ class DataSplitter:
     Returns:
         Dict[int, pd.DataFrame]: Dictionary mapping client IDs to their respective data subsets.
     """
-    
+
     def __init__(self, data_frame: pd.DataFrame, splitting_config: dict, num_clients: int) -> None:
         self.data_frame = data_frame
         self.splitting_config = splitting_config
@@ -69,14 +71,14 @@ class DataSplitter:
         for label in labels:
             label_data = self.data_frame[self.data_frame['label'] == label]
             proportions = dirichlet([alpha] * num_clients)
-            client_splits = np.split(label_data.sample(frac=1, random_state=42), 
+            client_splits = np.split(label_data.sample(frac=1, random_state=42),
                                      (np.cumsum(proportions)[:-1] * len(label_data)).astype(int))
             for i in range(num_clients):
                 client_data[i].append(client_splits[i])
 
         for i in range(num_clients):
             client_data[i] = pd.concat(client_data[i])
-        
+
         return client_data
 
     def feature_based_split(self, num_clients: int, feature_column: str) -> Dict[int, pd.DataFrame]:
@@ -96,7 +98,7 @@ class DataSplitter:
         for i, feature in enumerate(unique_features):
             feature_group = self.data_frame[self.data_frame[feature_column] == feature]
             client_data[i % num_clients] = pd.concat([client_data[i % num_clients], feature_group])
-        
+
         return client_data
 
     def save_split_data(self, client_data: Dict[int, pd.DataFrame], output_dir: str = 'client_data') -> None:

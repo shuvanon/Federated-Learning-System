@@ -1,12 +1,18 @@
+import json
 import os
+# from ..data_loader.utils import PreprocessedDataset
+from typing import Any, Dict, Tuple
+
 import flwr as fl
 import numpy as np
 import torch
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch.utils.data import DataLoader, random_split
+
 from model import Net
-from utils import load_config, train, test, PreprocessedDataset
-# from ..data_loader.utils import PreprocessedDataset
-from typing import Tuple, Dict, Any
+from model_creator import build_model_from_config
+from utils import PreprocessedDataset, load_config, train
+
 
 class FederatedClient(fl.client.NumPyClient):
     """
@@ -22,7 +28,7 @@ class FederatedClient(fl.client.NumPyClient):
     """
 
     def __init__(self, config: Dict[str, Any], client_id: int, data_loader: Tuple[DataLoader, DataLoader]):
-        self.model = Net()
+        self.model = build_model_from_config(config)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.train_loader, self.test_loader = data_loader
         self.epochs = config["training"]["epochs"]
@@ -45,15 +51,18 @@ class FederatedClient(fl.client.NumPyClient):
         Returns:
             Tuple[fl.common.NDArrays, int, Dict[str, float]]: Updated model weights, number of samples trained on, and training metrics.
         """
-        #client_id = config.get("client_id", "unknown_client")
-        print(f"Client {self.client_id}: Training for {self.epochs} epochs")
+        # client_id = config.get("client_id", "unknown_client")
+        round_number = config.get("evaluation_round", 0)
+        print(f"Round Number: {round_number} -> Client {self.client_id}: Training for {self.epochs} epochs")
 
         try:
             # Load model parameters
             self.model.load_state_dict({k: torch.tensor(v) for k, v in zip(self.model.state_dict().keys(), parameters)})
 
             # Train the model
-            train(self.model, self.train_loader, epochs=self.epochs, learning_rate=self.learning_rate, client_id=self.client_id,
+            train(self.model, self.train_loader, round_number=round_number, epochs=self.epochs,
+                  learning_rate=self.learning_rate,
+                  client_id=self.client_id,
                   device=self.device)
 
             # Extract updated model weights
@@ -81,9 +90,92 @@ class FederatedClient(fl.client.NumPyClient):
     def evaluate(self, parameters: list, config: Dict[str, Any]) -> Tuple[float, int, Dict[str, Any]]:
         """Evaluate the model on the local test data."""
         self.set_parameters(parameters)
-        loss, accuracy = test(self.model, self.test_loader, self.device)
-        print(f"Client {client_id}: Test Loss: {loss}, Test Accuracy: {accuracy}")
-        return float(loss), len(self.test_loader.dataset), {"accuracy": float(accuracy)}
+        all_labels = []
+        all_predictions = []
+        total_loss = 0.0
+
+        # Switch model to evaluation mode
+        self.model.eval()
+
+        # Define the loss function
+        criterion = torch.nn.CrossEntropyLoss()
+
+        # Perform evaluation
+        with torch.no_grad():
+            for data, label in self.test_loader:
+                data, label = data.to(self.device), label.to(self.device)
+                output = self.model(data)
+                loss = criterion(output, label)
+                total_loss += loss.item()
+                _, predictions = torch.max(output, dim=1)
+
+                all_labels.extend(label.cpu().numpy())
+                all_predictions.extend(predictions.cpu().numpy())
+
+        # Calculate metrics
+
+        accuracy = accuracy_score(all_labels, all_predictions)
+        precision = precision_score(all_labels, all_predictions, average="macro", zero_division=0)
+        recall = recall_score(all_labels, all_predictions, average="macro", zero_division=0)
+        f1 = f1_score(all_labels, all_predictions, average="macro", zero_division=0)
+
+        # Calculate the average loss
+        average_loss = total_loss / len(self.test_loader)
+
+        # Convert numpy types to Python-native types
+        all_labels = [int(label) for label in all_labels]
+        all_predictions = [int(pred) for pred in all_predictions]
+
+        # Retrieve configuration values
+        round_number = config.get("evaluation_round", 0)
+        experiment_dir = config.get("experiment_dir", "experiment_results")
+        print(f"Client {self.client_id}: Evaluating for round {round_number} in experiment directory {experiment_dir}")
+
+        # Prepare results
+        results = {
+            "client_id": self.client_id,
+            "round_number": round_number,
+            "loss": average_loss,
+            "num_samples": len(self.test_loader.dataset),
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
+            "labels": all_labels,
+            "predictions": all_predictions
+        }
+
+        # Save results in the experiment directory
+        client_results_dir = os.path.join(experiment_dir, "client_results")
+        os.makedirs(client_results_dir, exist_ok=True)
+        save_path = os.path.join(client_results_dir, f"client_{self.client_id}_round_{round_number}.json")
+        if os.path.exists(save_path):
+            print(f"File already exists: {save_path}. Skipping save.")
+            return total_loss / len(self.test_loader), len(self.test_loader.dataset), {}
+
+        with open(save_path, "w") as f:
+            json.dump(results, f, indent=4)
+        print(f"Results saved for client {self.client_id} at round {round_number} to {save_path}")
+
+        # print("Client Matrics for Client ID :", self.client_id)
+        # print("average_loss: " + str(average_loss))
+        # print("accuracy: " + str(accuracy))
+        # print("precision: " + str(precision))
+        # print("recall: " + str(recall))
+        # print("f1: " + str(f1))
+        # print("all_labels: " + str(all_labels))
+        # print("all_predictions: " + str(all_predictions))
+
+        # Return loss, number of samples, and metrics but this is not usable in server
+        # return average_loss, len(self.test_loader.dataset), {
+        #     "accuracy": accuracy,
+        #     "precision": precision,
+        #     "recall": recall,
+        #     "f1_score": f1,
+        #     "labels": ",".join(map(str, all_labels)),  # Convert list to comma-separated string
+        #     "predictions": ",".join(map(str, all_predictions))  # Convert list to comma-separated string
+        # }
+        return average_loss, len(self.test_loader.dataset), {}
 
     def set_parameters(self, parameters: list):
         """Set the model parameters."""
@@ -122,6 +214,7 @@ def load_preprocessed_data(client_id: int, config: Dict[str, Any]) -> Preprocess
 
     return dataset
 
+
 def split_dataset(dataset: PreprocessedDataset, train_split: float, batch_size: int) -> Tuple[DataLoader, DataLoader]:
     """
     Split the dataset into training and testing sets.
@@ -146,6 +239,7 @@ def split_dataset(dataset: PreprocessedDataset, train_split: float, batch_size: 
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, test_loader
+
 
 def main():
     """
@@ -173,11 +267,13 @@ def main():
     # Start the federated client
     fl.client.start_client(
         server_address=config["network"]["client"]["address"],
-        client=client.to_client()  # Convert the client to the appropriate type
+        client=client.to_client(),  # Convert the client to the appropriate type
+        grpc_max_message_length=2_147_483_647
     )
 
+
 if __name__ == "__main__":
-    print("Cleint Start")
-    current_working_dir = os.getcwd()
-    print("Current working directory:", current_working_dir)
+    # print("Cleint Start")
+    # current_working_dir = os.getcwd()
+    # print("Current working directory:", current_working_dir)
     main()

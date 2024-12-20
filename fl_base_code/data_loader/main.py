@@ -1,12 +1,13 @@
-import yaml
 import os
 import shutil
+
 import pandas as pd
-from data_loader import CustomImageDataset
-from data_splitter import DataSplitter
+import yaml
+
 from data_manipulation import DataManipulation
 from data_preprocessing import DataPreprocessing
-from utils import transfer_to_benchmark, copy_images_to_client_folders
+from data_splitter import DataSplitter
+from utils import copy_images_to_client_folders, transfer_to_benchmark
 
 
 # Clean folders function
@@ -104,9 +105,14 @@ def main() -> None:
 
             # Apply manipulation if needed
             if manipulation_technique != 'none':
-                manipulation_config = config['manipulation']['techniques'][manipulation_technique]
-                manipulator = DataManipulation(manipulation_config)
-                manipulator.bulk_process(client_id, img_dir, manipulation_config, intermediate_folder)
+                manipulation_config = config['manipulation']
+                # if manipulation_config['manipulation_mode'] == "random":
+                #     random_mode = True
+                # else:
+                #     random_mode = False
+
+                manipulator = DataManipulation(manipulation_technique, manipulation_config)
+                manipulator.bulk_process(client_id, img_dir, intermediate_folder)
 
             # Apply preprocessing if needed
             if preprocessing_technique != 'none':

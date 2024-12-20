@@ -1,19 +1,23 @@
+# Client utils.py
 import os
+from typing import Optional, Tuple
+
 import pandas as pd
-from PIL import Image
 import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
 import yaml
-from typing import Tuple, Optional
+from PIL import Image
 from sklearn.preprocessing import LabelEncoder
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
+
 
 def load_config(config_file):
-    current_directory = os.getcwd()
-    print("Current Working Directory:", current_directory)
+    # current_directory = os.getcwd()
+    # print("Current Working Directory:", current_directory)
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
     return config
+
 
 class CustomImageDataset(Dataset):
     def __init__(self, csv_file, img_dir, transform=None):
@@ -23,7 +27,7 @@ class CustomImageDataset(Dataset):
         self.label_mapping = self.create_label_mapping()
 
     def create_label_mapping(self):
-        labels = self.data_frame.iloc[:, 3].unique()  
+        labels = self.data_frame.iloc[:, 3].unique()
         label_mapping = {label: idx for idx, label in enumerate(labels)}
         return label_mapping
 
@@ -32,23 +36,33 @@ class CustomImageDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.img_dir, str(self.data_frame.iloc[idx, 0]))  # Ensure the filename is a string
-        img_name = img_name+'.png'
+        img_name = img_name + '.png'
         image = Image.open(img_name).convert('RGB')  # Convert image to grayscale
         tag_str = self.data_frame.iloc[idx, 3]
-        tag = torch.tensor(self.label_mapping[tag_str], dtype=torch.long)  # Convert string label to integer and then to a tensor
+        tag = torch.tensor(self.label_mapping[tag_str],
+                           dtype=torch.long)  # Convert string label to integer and then to a tensor
         if self.transform:
             image = self.transform(image)
         return image, tag
 
+
 def load_data(csv_file, img_dir, batch_size=32, train_split=0.8):
-    transform = transforms.Compose([
-        transforms.Resize((28, 28)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    config = load_config('config.yaml')
+    if config["model"]["type"] == "transformer":
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),  # Adjust for transformers
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
+    elif config["model"]["type"] == "custom_cnn":
+        transform = transforms.Compose([
+            transforms.Resize((64, 64)),  # Adjust for CNNs
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
 
     dataset = CustomImageDataset(csv_file=csv_file, img_dir=img_dir, transform=transform)
-    
+
     train_size = int(train_split * len(dataset))
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
@@ -58,7 +72,8 @@ def load_data(csv_file, img_dir, batch_size=32, train_split=0.8):
 
     return train_loader, test_loader
 
-def train(model, train_loader, device, epochs=1, learning_rate=0.001, client_id=100):
+
+def train(model, train_loader, round_number, device, epochs=1, learning_rate=0.001, client_id=100):
     """
     Trains the model on the given training data.
 
@@ -89,10 +104,15 @@ def train(model, train_loader, device, epochs=1, learning_rate=0.001, client_id=
             optimizer.step()  # Update model parameters
 
             running_loss += loss.item()  # Accumulate loss
+            # Clear unused memory
+            torch.cuda.empty_cache()
+        # Clear unused memory
+        torch.cuda.empty_cache()
 
         # Optional: Log the average loss per epoch
         # print(client_id)
-        print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(train_loader):.4f}")
+        print(
+            f"Round-> {round_number}:: Client: {client_id} -> Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(train_loader):.4f}")
 
 
 def test(model, test_loader, device):
@@ -101,7 +121,7 @@ def test(model, test_loader, device):
     test_loss = 0
     correct = 0
     criterion = torch.nn.CrossEntropyLoss(reduction='sum')
-    
+
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)  # Move data and target to GPU
@@ -109,10 +129,10 @@ def test(model, test_loader, device):
             test_loss += criterion(output, target).item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
-    
+
     test_loss /= len(test_loader.dataset)
     accuracy = correct / len(test_loader.dataset)
-    
+
     return test_loss, accuracy
 
 
@@ -135,17 +155,26 @@ class PreprocessedDataset(Dataset):
         label_column_index (int): Index of the label column in the CSV file.
     """
 
-    def __init__(self, data_dir: str, csv_file: str, label_column_index: int, transform: Optional[transforms.Compose] = None):
+    def __init__(self, data_dir: str, csv_file: str, label_column_index: int,
+                 transform: Optional[transforms.Compose] = None):
         self.data_dir = data_dir
         self.data_frame = pd.read_csv(csv_file)
         self.label_column_index = label_column_index
 
         # Set default transformations if none are provided
-        self.transform = transform if transform else transforms.Compose([
-            transforms.Resize((28, 28)),  # Resize to a standard size
-            transforms.ToTensor(),       # Convert image to a tensor
-            transforms.Normalize((0.5,), (0.5,))  # Normalize for better convergence
-        ])
+        config = load_config('config.yaml')
+        if config["model"]["type"] == "transformer":
+            self.transform = transforms.Compose([
+                transforms.Resize((224, 224)),  # Adjust for transformers
+                transforms.ToTensor(),
+                transforms.Normalize((0.5,), (0.5,))
+            ])
+        elif config["model"]["type"] == "custom_cnn":
+            self.transform = transforms.Compose([
+                transforms.Resize((64, 64)),  # Adjust for CNNs
+                transforms.ToTensor(),
+                transforms.Normalize((0.5,), (0.5,))
+            ])
 
         # Initialize and fit the label encoder to convert string labels into integers
         self.label_encoder = LabelEncoder()

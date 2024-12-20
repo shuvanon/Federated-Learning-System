@@ -1,7 +1,9 @@
 import os
+from typing import Any
+
 import pandas as pd
 from PIL import Image
-from typing import Any
+
 
 class DataPreprocessing:
     """
@@ -14,7 +16,7 @@ class DataPreprocessing:
     Returns:
         None
     """
-    
+
     def __init__(self) -> None:
         pass
 
@@ -43,7 +45,7 @@ class DataPreprocessing:
         """
         return img.rotate(degrees)
 
-    def bulk_process(self, data_frame: pd.DataFrame, img_dir: str, output_dir: str, 
+    def bulk_process(self, data_frame: pd.DataFrame, img_dir: str, output_dir: str,
                      process_type: str, process_params: Any = None) -> None:
         """
         Processes the entire dataset by applying a specified transformation and saves the results.
@@ -62,7 +64,7 @@ class DataPreprocessing:
             os.makedirs(output_dir)
 
         for _, row in data_frame.iterrows():
-            img_path = os.path.join(img_dir, str(row.iloc[0])+".png")
+            img_path = os.path.join(img_dir, str(row.iloc[0]) + ".png")
             img = Image.open(img_path)
 
             if process_type == 'fixed_flip':
@@ -71,10 +73,11 @@ class DataPreprocessing:
                 degrees = process_params.get('degrees', 0)
                 img = self.rotation(img, degrees)
 
-            save_path = os.path.join(output_dir, str(row.iloc[0])+".png")
+            save_path = os.path.join(output_dir, str(row.iloc[0]) + ".png")
             img.save(save_path)
 
-    def process_in_memory(self, data_frame: pd.DataFrame, img_dir: str, process_type: str, process_params: Any = None) -> pd.DataFrame:
+    def process_in_memory(self, data_frame: pd.DataFrame, img_dir: str, process_type: str,
+                          process_params: Any = None) -> pd.DataFrame:
         """
         Processes and returns the augmented images in memory for each client's data.
 

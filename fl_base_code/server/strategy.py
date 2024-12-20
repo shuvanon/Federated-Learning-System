@@ -1,5 +1,6 @@
 from flwr.server.strategy import FedAvg
 
+
 class CustomStrategy(FedAvg):
     def __init__(self):
         super().__init__()

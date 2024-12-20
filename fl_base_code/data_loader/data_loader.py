@@ -1,8 +1,10 @@
 import os
-import pandas as pd
-from torch.utils.data import Dataset
-from PIL import Image
 from typing import Optional, Tuple
+
+import pandas as pd
+from PIL import Image
+from torch.utils.data import Dataset
+
 
 class CustomImageDataset(Dataset):
     """
@@ -16,7 +18,7 @@ class CustomImageDataset(Dataset):
     Returns:
         Tuple[torch.Tensor, int]: Transformed image tensor and its label.
     """
-    
+
     def __init__(self, data_frame: pd.DataFrame, img_dir: str, transform: Optional[any] = None) -> None:
         self.data_frame = data_frame
         self.img_dir = img_dir
@@ -31,8 +33,8 @@ class CustomImageDataset(Dataset):
         img_name = os.path.join(self.img_dir, self.data_frame.iloc[idx, 0])
         image = Image.open(img_name)
         label = int(self.data_frame.iloc[idx, 1])
-        
+
         if self.transform:
             image = self.transform(image)
-        
+
         return image, label

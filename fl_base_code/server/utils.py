@@ -1,17 +1,22 @@
+# Server utils.py
+
 import os
-import yaml
-import torch
+from typing import Optional, Tuple
+
 import pandas as pd
+import torch
+import yaml
 from PIL import Image
+from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-from typing import Tuple, Optional
-from sklearn.preprocessing import LabelEncoder
+
 
 def load_config(config_file):
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
     return config
+
 
 def test(model, test_loader, device):
     """
@@ -63,7 +68,8 @@ class PreprocessedDataset(Dataset):
         label_column_index (int): Index of the label column in the CSV file.
     """
 
-    def __init__(self, data_dir: str, csv_file: str, label_column_index: int, transform: Optional[transforms.Compose] = None):
+    def __init__(self, data_dir: str, csv_file: str, label_column_index: int,
+                 transform: Optional[transforms.Compose] = None):
         self.data_dir = data_dir
         self.data_frame = pd.read_csv(csv_file)
         self.label_column_index = label_column_index
@@ -71,7 +77,7 @@ class PreprocessedDataset(Dataset):
         # Set default transformations if none are provided
         self.transform = transform if transform else transforms.Compose([
             transforms.Resize((28, 28)),  # Resize to a standard size
-            transforms.ToTensor(),       # Convert image to a tensor
+            transforms.ToTensor(),  # Convert image to a tensor
             transforms.Normalize((0.5,), (0.5,))  # Normalize for better convergence
         ])
 
