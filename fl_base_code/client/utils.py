@@ -73,7 +73,7 @@ def load_data(csv_file, img_dir, batch_size=32, train_split=0.8):
     return train_loader, test_loader
 
 
-def train(model, train_loader, round_number, device, epochs=1, learning_rate=0.001, client_id=100):
+def train(model, train_loader, device, epochs=1, learning_rate=0.001, client_id=100):
     """
     Trains the model on the given training data.
 
@@ -112,7 +112,7 @@ def train(model, train_loader, round_number, device, epochs=1, learning_rate=0.0
         # Optional: Log the average loss per epoch
         # print(client_id)
         print(
-            f"Round-> {round_number}:: Client: {client_id} -> Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(train_loader):.4f}")
+            f"Client: {client_id} -> Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(train_loader):.4f}")
 
 
 def test(model, test_loader, device):

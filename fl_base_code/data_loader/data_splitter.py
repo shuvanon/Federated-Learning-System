@@ -70,20 +70,32 @@ class DataSplitter:
 
         for label in labels:
             label_data = self.data_frame[self.data_frame['label'] == label]
+            if len(label_data) < num_clients:
+                print(f"Warning: Label {label} has fewer samples ({len(label_data)}) than clients ({num_clients}).")
+
+            # Generate proportions using Dirichlet distribution
             proportions = dirichlet([alpha] * num_clients)
-            client_splits = np.split(label_data.sample(frac=1, random_state=42),
-                                     (np.cumsum(proportions)[:-1] * len(label_data)).astype(int))
+            proportions /= proportions.sum()  # Normalise proportions
+
+            print(f"Proportions for label {label}: {proportions}")
+
+            # Shuffle and split the data
+            splits = (np.cumsum(proportions)[:-1] * len(label_data)).astype(int)
+            client_splits = np.split(label_data.sample(frac=1, random_state=42), splits)
+
+            # Assign splits to clients
             for i in range(num_clients):
                 client_data[i].append(client_splits[i])
 
+        # Concatenate data for each client
         for i in range(num_clients):
-            client_data[i] = pd.concat(client_data[i])
+            client_data[i] = pd.concat(client_data[i], ignore_index=True)
 
         return client_data
 
     def feature_based_split(self, num_clients: int, feature_column: str) -> Dict[int, pd.DataFrame]:
         """
-        Splits the data based on a specific feature among clients.
+        Splits the data by assigning entire feature groups to specific clients.
 
         Args:
             feature_column (str): Column name for the feature to split on.
@@ -95,9 +107,10 @@ class DataSplitter:
         print("feature_based_split")
         unique_features = self.data_frame[feature_column].unique()
         client_data = {i: pd.DataFrame() for i in range(num_clients)}
+
         for i, feature in enumerate(unique_features):
             feature_group = self.data_frame[self.data_frame[feature_column] == feature]
-            client_data[i % num_clients] = pd.concat([client_data[i % num_clients], feature_group])
+            client_data[i % num_clients] = pd.concat([client_data[i % num_clients], feature_group], ignore_index=True)
 
         return client_data
 

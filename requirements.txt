@@ -1,0 +1,11 @@
+torch~=2.3.1+cu121
+pandas~=2.2.2
+yaml~=0.2.5
+pyyaml~=6.0.1
+pillow~=10.2.0
+scikit-learn~=1.5.2
+torchvision~=0.18.1+cu121
+flwr~=1.8.0
+numpy~=1.26.4
+timm~=1.0.11
+opencv-python~=4.10.0.84

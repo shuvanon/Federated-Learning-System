@@ -1,6 +1,5 @@
 import json
 import os
-# from ..data_loader.utils import PreprocessedDataset
 from typing import Any, Dict, Tuple
 
 import flwr as fl
@@ -9,7 +8,6 @@ import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch.utils.data import DataLoader, random_split
 
-from model import Net
 from model_creator import build_model_from_config
 from utils import PreprocessedDataset, load_config, train
 
@@ -52,15 +50,14 @@ class FederatedClient(fl.client.NumPyClient):
             Tuple[fl.common.NDArrays, int, Dict[str, float]]: Updated model weights, number of samples trained on, and training metrics.
         """
         # client_id = config.get("client_id", "unknown_client")
-        round_number = config.get("evaluation_round", 0)
-        print(f"Round Number: {round_number} -> Client {self.client_id}: Training for {self.epochs} epochs")
+        print(f"Client {self.client_id}: Training for {self.epochs} epochs")
 
         try:
             # Load model parameters
             self.model.load_state_dict({k: torch.tensor(v) for k, v in zip(self.model.state_dict().keys(), parameters)})
 
             # Train the model
-            train(self.model, self.train_loader, round_number=round_number, epochs=self.epochs,
+            train(self.model, self.train_loader, epochs=self.epochs,
                   learning_rate=self.learning_rate,
                   client_id=self.client_id,
                   device=self.device)
@@ -69,7 +66,7 @@ class FederatedClient(fl.client.NumPyClient):
             updated_weights = [v.cpu().numpy() for v in self.model.state_dict().values()]
             num_samples = len(self.train_loader.dataset)  # Ensure this is a positive integer
 
-            # Dummy metric for illustration, replace with actual computation
+            # # Dummy metric for illustration, replace with actual computation
             metrics = {"train_loss": 0.0}
 
             # Check returned values
@@ -273,7 +270,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # print("Cleint Start")
     # current_working_dir = os.getcwd()
     # print("Current working directory:", current_working_dir)
     main()

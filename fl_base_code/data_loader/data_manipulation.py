@@ -66,7 +66,7 @@ class DataManipulation:
             manipulation_value = self.manipulation_config[self.manipulation_technique]["intensity"]
 
         elif self.manipulation_technique == "white_balance":
-            manipulation_value = -self.manipulation_config[self.manipulation_technique]["color_temperature"]
+            manipulation_value = self.manipulation_config[self.manipulation_technique]["color_temperature"]
 
         elif self.manipulation_technique == "gaussian_noise":
             manipulation_value = self.manipulation_config[self.manipulation_technique]["sigma"]
@@ -102,7 +102,7 @@ class DataManipulation:
         data_frame = pd.read_csv(f'{output_dir}/data.csv')
 
         for _, row in data_frame.iterrows():
-            img_path = os.path.join(img_dir, str(row[0]) + ".png")
+            img_path = os.path.join(img_dir, str(row.iloc[0]) + ".png")
             # print("IMAGE PATH:  "+img_path)
             img = Image.open(img_path)
 
@@ -121,7 +121,7 @@ class DataManipulation:
             else:
                 raise ValueError(f"Technique '{self.manipulation_technique}' is not supported or implemented.")
 
-            save_path = os.path.join(output_dir, str(row[0]) + ".png")
+            save_path = os.path.join(output_dir, str(row.iloc[0]) + ".png")
             # print("SAVE PATH:  "+save_path)
             manipulated_img.save(save_path)
 

@@ -1,16 +1,16 @@
 # Top-level selections
-experiment_name: "contrast_set_5"
+experiment_name: "Baseline"
 use_split_strategy: 'random'  # Choose between 'random', 'quantity_skew', 'feature_based'
-use_manipulation_technique: 'contrast' # 'contrast', 'brightness', 'gaussian_noise'  # Choose from available techniques
+use_manipulation_technique: 'sharpening_blurring' # 'contrast', 'brightness','white_balance', 'gaussian_noise', 'sharpening_blurring'  # Choose from available techniques
 use_preprocessing_technique: 'none'  # Choose from available techniques
 
 # Data settings
 #sehoaoi data
-#  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data\sehoaoi_labeled_original_high.csv'
-#  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data'
+#  csv_file: '\final_data\sehoaoi_data\sehoaoi_labeled_original_high.csv'
+#  img_dir: '\final_data\sehoaoi_data'
 #siemens
-#  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\siemens_amberg_data\siemens_labeled_original_high.csv'
-#  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\siemens_amberg_data'
+#  csv_file: '\final_data\siemens_amberg_data\siemens_labeled_original_high.csv'
+#  img_dir: '\final_data\siemens_amberg_data'
 data:
   csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data\sehoaoi_labeled_original_high.csv'
   img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data'
@@ -34,29 +34,29 @@ num_clients: 5
 splitting:
   strategies:
     random:
-      num_clients: 2
+      num_clients: 5
     quantity_skew:
-      alpha: 0.5
+      alpha: 0.1
     feature_based:
-      feature_column: 'label'
+      feature_column: 'errText'
 
 # Manipulation techniques
 manipulation:
   manipulation_mode: random # "fixed" or "random"
   contrast:
-    alpha: 1 # Decrease α < 1, Increase α > 1
+    alpha: 2 # Decrease α < 1, Increase α > 1
     alpha_min: 0
     alpha_max: 3
   brightness:
-    intensity: 10 #intensity value <0 is darken, >1 brighten
-    intensity_min: -255
-    intensity_max: 255
+    intensity: 150 #intensity value <0 is darken, >1 brighten
+    intensity_min: -150
+    intensity_max: 150
   white_balance:
-    color_temperature: 5000 # << is worm, >> is cool
+    color_temperature: 12000 # << is worm, >> is cool
     color_temperature_min: 1000
     color_temperature_max: 20000
   gaussian_noise:
-    sigma: 10 # σ = 0: No noise, σ > 0:Increasing noise
+    sigma: 20 # σ = 0: No noise, σ > 0:Increasing noise
     sigma_min: 0
     sigma_max: 50
   edge_filter:
@@ -64,7 +64,7 @@ manipulation:
     lower_threshold: 50  # Fixed threshold for edge detection
     upper_threshold: 100
   sharpening_blurring:
-    lambda_value: 1.5  # λ>0: The image is sharpened, λ<0: The image is blurred
+    lambda_value: 0.6  # λ>0: The image is sharpened, λ<0: The image is blurred
     lambda_min: -1
     lambda_max: 1
 

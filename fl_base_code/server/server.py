@@ -11,7 +11,6 @@ from torchvision import transforms
 
 from MetricSaver import MetricSaver
 from model_creator import build_model_from_config
-# from data_loader.utils import PreprocessedDataset
 from utils import PreprocessedDataset, load_config
 
 
@@ -179,6 +178,16 @@ def main():
         evaluate_fn=server_evaluation_fn,  # Server-side evaluation function
         on_evaluate_config_fn=on_evaluate_config_fn
     )
+
+    # strategy = FedProx(
+    #     fraction_fit=1.0,
+    #     fraction_evaluate=1.0,
+    #     min_fit_clients=num_clients,
+    #     min_available_clients=num_clients,
+    #     evaluate_fn=server_evaluation_fn,
+    #     on_evaluate_config_fn=on_evaluate_config_fn,
+    #     proximal_mu=0.1
+    # )
 
     # Start Flower server
     fl.server.start_server(

@@ -79,7 +79,6 @@ def run_client(client_id: int, config: Dict[str, Any]):
     # Dynamically generate the client data paths
     client_data = generate_client_paths(client_id)
 
-    # print(f"Starting client {client_id} with CSV: {client_data['csv_file']} and Image Dir: {client_data['img_dir']}...")
 
     # Pass the client ID and generated paths as environment variables
     client_command = ["python", "client/client.py"]
