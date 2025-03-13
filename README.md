@@ -1,6 +1,5 @@
-# Project Title
+# The Impact of Artificial Client Data Generation Parameters on the Performance of Federated Learning Systems
 
-The Impact of Artificial Client Data Generation Parameters on the Performance of Federated Learning Systems
 
 ## Overview
 This project investigates the impact of artificial client data generation parameters on the performance of Federated Learning (FL) systems. It involves the development of a modular FL pipeline with configurable data splitting and manipulation techniques, along with dynamic model selection capabilities. The system is built using the Flower framework and integrates custom CNN and Vision Transformer models.

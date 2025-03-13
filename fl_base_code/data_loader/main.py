@@ -111,6 +111,8 @@ def main() -> None:
                 # else:
                 #     random_mode = False
 
+                # m_value = [ 0, 4, 5, 1, 4, 3, 8, 4, 4, 8, 5, 5, 7, 18, 2, 7, 30, 6, 14, 29, 14, 8, 48, 49, 29]
+
                 manipulator = DataManipulation(manipulation_technique, manipulation_config)
                 manipulator.bulk_process(client_id, img_dir, intermediate_folder)
 

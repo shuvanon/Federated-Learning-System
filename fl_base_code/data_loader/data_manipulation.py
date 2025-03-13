@@ -27,6 +27,7 @@ class DataManipulation:
             self.manipulation_value = self.random_value()
         else:
             self.manipulation_value = self.fixed_value()
+        # self.manipulation_value = manipulation_value
 
     def random_value(self):
         if self.manipulation_technique == "contrast":

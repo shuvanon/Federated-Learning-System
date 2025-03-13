@@ -1,7 +1,7 @@
 # Top-level selections
 experiment_name: "Baseline"
 use_split_strategy: 'random'  # Choose between 'random', 'quantity_skew', 'feature_based'
-use_manipulation_technique: 'sharpening_blurring' # 'contrast', 'brightness','white_balance', 'gaussian_noise', 'sharpening_blurring'  # Choose from available techniques
+use_manipulation_technique: 'none' # 'contrast', 'brightness','white_balance', 'gaussian_noise', 'sharpening_blurring'  # Choose from available techniques
 use_preprocessing_technique: 'none'  # Choose from available techniques
 
 # Data settings
@@ -12,8 +12,8 @@ use_preprocessing_technique: 'none'  # Choose from available techniques
 #  csv_file: '\final_data\siemens_amberg_data\siemens_labeled_original_high.csv'
 #  img_dir: '\final_data\siemens_amberg_data'
 data:
-  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data\sehoaoi_labeled_original_high.csv'
-  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\sehoaoi_data'
+  csv_file: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\test\sehoaoi_labeled_original_high.csv'
+  img_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\final_data\test'
   preprocessed_data_dir: 'E:\FAU\Thesis\Code\fl_client_splitting_shuvanon\fl_base_code\preprocessed_data'
   save_split: True  # If True, save split data to disk; if False, keep in RAM
   clean_data_before_run: True  # If True, clean the client and benchmark folders before running
